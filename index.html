@@ -151,11 +151,12 @@
             btn.classList.add('selected');
             const detail = document.getElementById('week-detail');
             const data = timetable[day];
-            let html = `<h2 style="font-size: 1.1rem; color: #fff; margin-bottom:15px; text-align:center;">${day} Schedule</h2>`;
+            let html = `<h2 style="font-size: 1.1rem; color: #fff; margin-bottom:15px; text-align:center;">${day}</h2>`;
             html += data.map((subject, index) => `<div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between;"><small style="color: #64748b">${times[index]}</small><span style="color: ${getSubjectColor(subject)}; font-weight:bold;">${subject === '-' ? 'No Class' : subject}</span></div>`).join('');
             detail.innerHTML = html;
         }
         init();
     </script>
 </body>
+
 </html>
