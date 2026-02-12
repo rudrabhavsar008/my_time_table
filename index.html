@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Timetable</title>
+    
+    <link rel="icon" type="image/png" href="./icon.png">
+    <link rel="apple-touch-icon" href="./icon.png">
+    <link rel="manifest" href="./manifest.json">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --accent: #f43f5e;
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- FIX: REMOVES BLUE TAP BOX ON MOBILE --- */
+        * {
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-touch-callout: none !important;
+        }
+        button, .btn {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        /* ------------------------------------------ */
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .container { width: 95%; max-width: 450px; text-align: center; padding-bottom: 20px; }
+        .view { display: none; animation: slideIn 0.3s ease-out; }
+        .view.active { display: block; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 25px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 { font-size: 1.4rem; margin-bottom: 20px; color: #818cf8; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .item:last-child { border-bottom: none; }
+        .time { font-size: 0.85rem; color: #94a3b8; font-weight: 500; }
+        .subject { font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .days-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
+        .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s ease; }
+        .btn:active { transform: scale(0.95); }
+        
+        .btn-day { background: var(--glass); border: 1px solid var(--glass-border); font-size: 0.9rem; }
+        .btn-day.selected { background: var(--primary); border-color: var(--primary); }
+        .btn-toggle { margin-top: 25px; width: 100%; background: var(--accent); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
+        #week-detail { margin-top: 20px; min-height: 150px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="home-view" class="view active">
+            <div class="card">
+                <h1 id="today-title">Today's Schedule</h1>
+                <div id="today-list"></div>
+            </div>
+            <button class="btn btn-toggle" onclick="toggleView('week')">📅 Full Week View</button>
+        </div>
+
+        <div id="week-view" class="view">
+            <div class="card">
+                <h1>Weekly Overview</h1>
+                <div class="days-grid">
+                    <button class="btn btn-day" onclick="showSpecificDay('Monday', this)">Mon</button>
+                    <button class="btn btn-day" onclick="showSpecificDay('Tuesday', this)">Tue</button>
+                    <button class="btn btn-day" onclick="showSpecificDay('Wednesday', this)">Wed</button>
+                    <button class="btn btn-day" onclick="showSpecificDay('Thursday', this)">Thu</button>
+                    <button class="btn btn-day" onclick="showSpecificDay('Friday', this)">Fri</button>
+                    <button class="btn btn-day" onclick="showSpecificDay('Saturday', this)">Sat</button>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 20px 0;">
+                <div id="week-detail">Select a day above</div>
+            </div>
+            <button class="btn btn-toggle" style="background: var(--primary);" onclick="toggleView('home')">🏠 Back Home</button>
+        </div>
+    </div>
+
+    <script>
+        const times = ['10:30 - 11:30', '11:30 - 12:30', '01:00 - 02:00', '02:00 - 03:00', '03:00 - 04:00', '04:10 - 05:10', '05:10 - 06:10'];
+        const timetable = {
+            Monday: ['CC-459', 'SE-459', 'SE LAB-L10', 'SE LAB-L10', 'OOP-AB001', 'OOP LAB-L4', 'OOP LAB-L4'],
+            Tuesday: ['ENT-459', 'ENT-459', 'CC-459', 'SE-459', 'INS LAB-L5', 'INS LAB-L5', 'IML-459'],
+            Wednesday: ['INS LAB-L12A', 'INS LAB-L12A', 'CC-459', 'OOP-459', 'SE-459', '-', '-'],
+            Thursday: ['IML-459', 'ENT-459', 'IWD LAB-L3', 'IWD LAB-L3', 'IWD LAB-L3', 'IWD LAB-L3', 'INS(T)-454'],
+            Friday: ['OOP-459', 'IML-459', 'IWD(T)-459', 'IWD(T)-459', 'CC LAB-L2', 'CC LAB-L2', '-'],
+            Saturday: ['IML LAB-L4', 'IML LAB-L4', 'IML LAB-L4', 'IML LAB-L4', '-', '-', '-']
+        };
+
+        const subjectColors = {
+            'CC-459': '#00f2ff', 'SE-459': '#70ff70', 'SE LAB-L10': '#00ff00',
+            'OOP-AB001': '#bd93f9', 'OOP-459': '#bd93f9', 'OOP LAB-L4': '#ff79c6',
+            'ENT-459': '#ffb86c', 'INS LAB-L5': '#f1fa8c', 'INS LAB-L12A': '#f1fa8c',
+            'IML-459': '#ff5555', 'IWD LAB-L3': '#50fa7b', 'IWD(T)-459': '#8be9fd',
+            'CC LAB-L2': '#ff79c6', 'IML LAB-L4': '#ff5555', 'INS(T)-454': '#ffb86c', '-': '#475569'
+        };
+
+        function getSubjectColor(name) { return subjectColors[name] || '#ffffff'; }
+
+        function init() {
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+            document.getElementById('today-title').innerText = today;
+            renderList(today, 'today-list');
+            if('serviceWorker' in navigator) { 
+                navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker Registered')); 
+            }
+        }
+
+        function renderList(day, elementId) {
+            const container = document.getElementById(elementId);
+            const data = timetable[day];
+            if (!data) { container.innerHTML = `<div style="color: #475569; padding: 20px;">Relax! No classes today.</div>`; return; }
+            container.innerHTML = data.map((subject, index) => {
+                if (subject === '-') return ''; 
+                return `<div class="item"><span class="time">${times[index]}</span><span class="subject" style="color: ${getSubjectColor(subject)}">${subject}</span></div>`;
+            }).join('');
+        }
+
+        function toggleView(view) {
+            document.getElementById('home-view').classList.toggle('active', view === 'home');
+            document.getElementById('week-view').classList.toggle('active', view === 'week');
+        }
+
+        function showSpecificDay(day, btn) {
+            document.querySelectorAll('.btn-day').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            const detail = document.getElementById('week-detail');
+            const data = timetable[day];
+            let html = `<h2 style="font-size: 1.1rem; color: #fff; margin-bottom:15px; text-align:center;">${day} Schedule</h2>`;
+            html += data.map((subject, index) => `<div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between;"><small style="color: #64748b">${times[index]}</small><span style="color: ${getSubjectColor(subject)}; font-weight:bold;">${subject === '-' ? 'No Class' : subject}</span></div>`).join('');
+            detail.innerHTML = html;
+        }
+        init();
+    </script>
+</body>
+</html>
