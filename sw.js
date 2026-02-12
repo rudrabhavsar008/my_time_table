@@ -1,5 +1,5 @@
 // Version: final-v1 (Changing this name forces an update)
-const cacheName = 'timetable-final-v1'; 
+const cacheName = 'timetable-final-v2'; 
 const assets = [
   './',
   './index.html',
@@ -37,4 +37,5 @@ self.addEventListener('fetch', e => {
       return response || fetch(e.request);
     })
   );
+
 });
